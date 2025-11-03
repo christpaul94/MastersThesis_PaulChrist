@@ -1,3 +1,27 @@
+def plot_simple_momentum_histogram(
+    p_tensor_dimless: torch.Tensor,
+    bins: int = 75,
+    title: str = "Momentum Distribution"
+):
+
+    p_magnitudes = torch.sqrt(torch.sum(p_tensor_dimless**2, dim=1))
+
+    p_magnitudes_np = p_magnitudes.cpu().numpy()
+
+    plt.figure(figsize=(10, 6))
+
+    plt.hist(p_magnitudes_np, bins=bins, density=True, alpha=0.8, label='Simulated Distribution')
+
+    plt.title(title, fontsize=16)
+    plt.xlabel("Dimensionsloser Impulsbetrag |p|")
+    plt.ylabel("Wahrscheinlichkeitsdichte")
+    plt.grid(True, linestyle=':')
+    plt.legend()
+    plt.tight_layout()
+
+
+
+
 def plot_energy_and_error(t, kinetic_energy, potential_pl, potential_lj):
     """
     Plots:
