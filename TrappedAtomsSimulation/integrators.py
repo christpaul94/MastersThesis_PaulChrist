@@ -48,7 +48,7 @@ def harmonic_fp(
     total_potential = potential_per_particle.sum()
     return forces, total_potential, potential_per_particle
 
-def run_velocity_verlet_simulation_HO(
+def run_verlet_simulation_HO(
     t_values: torch.Tensor,
     q0: torch.Tensor,
     p0: torch.Tensor,
