@@ -38,6 +38,15 @@ def solve_harmonic_analytical(
 
     return q_out, p_out
 
+def harmonic_fp(
+    q: torch.Tensor,
+    omega_matrix: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    omega_squared = omega_matrix @ omega_matrix.T
+    forces = - q @ omega_squared
+    potential_per_particle = 0.5 * torch.einsum('ni,ij,nj->n', q, omega_squared, q)
+    total_potential = potential_per_particle.sum()
+    return forces, total_potential, potential_per_particle
 
 def run_velocity_verlet_simulation_HO(
     t_values: torch.Tensor,
