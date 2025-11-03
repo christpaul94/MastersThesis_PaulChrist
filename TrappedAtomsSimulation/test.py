@@ -1,1 +1,82 @@
-asda
+from pykeops.torch import LazyTensor
+import torch
+import triton
+import triton.language as tl
+import numpy as np
+
+def pair_keops_fp(positions: torch.Tensor, r: float, c: float):
+    N = positions.shape[0]
+    r0_2 = r**2
+    x_i = LazyTensor(positions[:, None, :]); x_j = LazyTensor(positions[None, :, :])
+    diff = x_i - x_j
+    r_sq = diff.sqnorm2()
+    exp_term = (-r_sq / (2 * r0_2)).exp()
+    potential_ij = c * exp_term
+    total_sum = potential_ij.sum_reduction(axis=1).sum()
+    total_potential = 0.5 * (total_sum - N * c)
+    forces = (potential_ij * diff / r0_2).sum_reduction(axis=1)
+    return forces, total_potential
+
+
+# --- CUDA Kernel (Triton) ---
+@triton.jit
+def softcore_kernel_corrected(
+    ptr_positions, ptr_forces, ptr_potential_sum_i,
+    N: tl.int32, r0: tl.float32, c: tl.float32,
+    BLOCK_SIZE: tl.constexpr
+):
+    i = tl.program_id(axis=0)
+    pos_i_x = tl.load(ptr_positions + i * 3 + 0)
+    pos_i_y = tl.load(ptr_positions + i * 3 + 1)
+    pos_i_z = tl.load(ptr_positions + i * 3 + 2)
+
+    force_acc_x, force_acc_y, force_acc_z = 0.0, 0.0, 0.0
+    potential_acc = 0.0
+    r0_2 = r0 * r0
+
+    for j_tile in range(0, N, BLOCK_SIZE):
+        offs_j = j_tile + tl.arange(0, BLOCK_SIZE)
+        mask_j = offs_j < N
+        ptr_j = ptr_positions + offs_j * 3
+        pos_j_x = tl.load(ptr_j + 0, mask=mask_j)
+        pos_j_y = tl.load(ptr_j + 1, mask=mask_j)
+        pos_j_z = tl.load(ptr_j + 2, mask=mask_j)
+
+        diff_x = pos_i_x - pos_j_x
+        diff_y = pos_i_y - pos_j_y
+        diff_z = pos_i_z - pos_j_z
+        r_sq = diff_x * diff_x + diff_y * diff_y + diff_z * diff_z
+
+        # Eigeninteraktion (i=j) ignorieren
+        r_sq = tl.where(i == offs_j, float('inf'), r_sq)
+
+        exp_term = tl.exp(-r_sq / (2.0 * r0_2))
+        exp_term = tl.where(mask_j, exp_term, 0.0)
+
+        potential_ij = c * exp_term
+        potential_acc += tl.sum(potential_ij)
+        force_scalar = potential_ij / r0_2
+
+        force_acc_x += tl.sum(force_scalar * diff_x)
+        force_acc_y += tl.sum(force_scalar * diff_y)
+        force_acc_z += tl.sum(force_scalar * diff_z)
+
+    tl.store(ptr_forces + i * 3 + 0, force_acc_x)
+    tl.store(ptr_forces + i * 3 + 1, force_acc_y)
+    tl.store(ptr_forces + i * 3 + 2, force_acc_z)
+    tl.store(ptr_potential_sum_i + i, potential_acc)
+
+def pair_triton_fp(positions: torch.Tensor, r: float, c: float):
+    N = positions.shape[0]
+    forces = torch.empty_like(positions)
+    potential_sum_i = torch.empty(N, device=positions.device, dtype=positions.dtype)
+    grid = (N,)
+
+    softcore_kernel_corrected[grid](
+        positions, forces, potential_sum_i, N, r, c, BLOCK_SIZE=1024
+    )
+
+    total_sum = potential_sum_i.sum()
+    total_potential = total_sum * 0.5
+
+    return forces, total_potential
