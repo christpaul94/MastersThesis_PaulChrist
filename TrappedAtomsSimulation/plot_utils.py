@@ -19,7 +19,42 @@ def plot_simple_momentum_histogram(
     plt.legend()
     plt.tight_layout()
 
+def calculate_group_temperatures(
+    momenta: torch.Tensor,
+    n_groups: Tuple[int, int],
+    T_ref: float
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    n1 = n_groups[0]
+    p_group1 = momenta[:, :n1, :]
+    p_group2 = momenta[:, n1:, :]
+    K_dimless_group1 = 0.5 * torch.sum(p_group1**2, dim=(1, 2))
+    K_dimless_group2 = 0.5 * torch.sum(p_group2**2, dim=(1, 2))
+    T_group1 = T_ref * (2.0 / (3.0 * n_groups[0])) * K_dimless_group1
+    T_group2 = T_ref * (2.0 / (3.0 * n_groups[1])) * K_dimless_group2
+    return T_group1, T_group2
 
+def plot_thermalization(
+    results: Dict,
+    n_groups: Tuple[int, int],
+    temp_groups: Tuple[float, float],
+    T0_s: torch.Tensor # It receives a tensor
+):
+    T_ref = temp_groups[0]
+    T_group1, T_group2 = calculate_group_temperatures(results['momenta'], n_groups, T_ref)
+    t_phys_ms = results['times'].cpu().numpy() * T0_s.item() * 1000
+    T_eq = (n_groups[0] * temp_groups[0] + n_groups[1] * temp_groups[1]) / sum(n_groups)
+
+    plt.figure(figsize=(12, 7))
+    plt.plot(t_phys_ms, T_group1.cpu().numpy() * 1e6, label=f"Gruppe 1 ({n_groups[0]} Teilchen)", color='blue')
+    plt.plot(t_phys_ms, T_group2.cpu().numpy() * 1e6, label=f"Gruppe 2 ({n_groups[1]} Teilchen)", color='red')
+    plt.axhline(y=T_eq * 1e6, color='black', linestyle='--', label=f"T_eq = {T_eq*1e6:.2f} µK")
+    plt.title("Thermalisierung der Teilchengruppen", fontsize=16)
+    plt.xlabel("Zeit (ms)")
+    plt.ylabel("Temperatur (µK)")
+    plt.legend()
+    plt.grid(True, linestyle=':')
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_energy_and_error(t, kinetic_energy, potential_pl, potential_lj):
