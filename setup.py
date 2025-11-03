@@ -1,3 +1,5 @@
+from setuptools import setup, find_packages
+
 setup(
     name='trapped_atoms_simulation', # Name für pip
     version='0.1.0',
