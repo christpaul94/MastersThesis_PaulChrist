@@ -84,6 +84,7 @@ def initialize_one_temp_gaussian_state(
         "pair_force_params": pair_params,
         "precision_type": precision,
         "device": device,
+        "L0_m": L0,
         "T0_s": T0,
         "E0_J": E0
     }
@@ -168,6 +169,7 @@ def initialize_two_temp_gaussian_state(
         "pair_force_params": pair_params,
         "precision_type": precision,
         "device": device,
+        "L0_m": L0,
         "T0_s": T0,
         "E0_J": E0
     }
