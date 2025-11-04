@@ -95,8 +95,8 @@ def initialize_two_temp_gaussian_state(
     omega_phys_hz: Tuple[float, float, float],
     t_end_s: float,
     dt_s: float,
-    pair_r_phys: float = None,
-    pair_c_phys: float = None,
+    r0_phys: float = None,
+    C_phys: float = None,
     precision: torch.dtype = torch.float32,
     device: torch.device = torch.device('cpu')
 ) -> Dict:
