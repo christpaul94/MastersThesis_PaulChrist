@@ -91,7 +91,7 @@ def initialize_one_temp_gaussian_state(
     }
 
 def initialize_two_temp_gaussian_state(
-    n_particles_groups: Tuple[int, int]
+    n_particles_groups: Tuple[int, int],
     temp_k_groups: Tuple[float, float],
     omega_phys_hz: Tuple[float, float, float],
     t_end_s: float,
