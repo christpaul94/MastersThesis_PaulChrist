@@ -128,7 +128,6 @@ def run_verlet_simulation_HO(
                   f"| Time: {eta_seconds // 60} min {eta_seconds % 60} s", end='', flush=True)
 
 
-            print("\nIntegration abgeschlossen.") # Fügt einen Zeilenumbruch hinzu
 
         return {
             "times": t_values, "positions": q_out, "momenta": p_out,
