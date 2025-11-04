@@ -1,5 +1,7 @@
 import torch
 from typing import Dict, Tuple, Callable
+import matplotlib.pyplot as plt
+
 
 def plot_simple_momentum_histogram(
     p_tensor_dimless: torch.Tensor,
