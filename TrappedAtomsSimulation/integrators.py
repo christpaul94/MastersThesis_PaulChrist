@@ -135,3 +135,97 @@ def run_verlet_simulation_HO(
             "potential_energy_harmonic": potential_harmonic_out,
             "potential_energy_pair": potential_pair_out
         }
+
+
+
+def run_DKDsplitting_simulation_HO(
+    t_values: torch.Tensor,
+    q0: torch.Tensor,
+    p0: torch.Tensor,
+    omega_matrix: torch.Tensor,
+    pair_force_func: Callable,
+    pair_force_params: Dict,
+    precision_type: torch.dtype = torch.float32,
+    device: torch.device = torch.device('cpu'),
+    substeps: int = 100,
+    **kwargs
+) -> Dict[str, torch.Tensor]:
+    """
+    Simulation mit dem Strang Splitting (Drift-Kick-Drift)
+    
+    H = T(p) + V(q)
+
+    """
+    with torch.no_grad():
+        num_save_points, n_particles = t_values.size(0), q0.size(0)
+
+        # Output-Arrays
+        q_out = torch.empty((num_save_points, n_particles, 3), dtype=precision_type, device=device)
+        p_out = torch.empty((num_save_points, n_particles, 3), dtype=precision_type, device=device)
+        kinetic_energy_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+        potential_harmonic_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+        potential_pair_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+
+        q_current, p_current = q0.to(device, precision_type), p0.to(device, precision_type)
+
+        # --- Initialisierung ---
+        q_out[0], p_out[0] = q_current, p_current
+        kinetic_energy_out[0] = 0.5 * torch.sum(p_current**2)
+        
+        # Berechne Potentiale für die Speicherung
+      
+        _, pot_h, _ = harmonic_fp(q_current, omega_matrix)
+        _, pot_p = pair_force_func(q_current, **pair_force_params)
+        potential_harmonic_out[0], potential_pair_out[0] = pot_h, pot_p
+
+
+        q_half = torch.empty_like(q_current)
+
+        # --- Hauptschleife ---
+        for i in range(1, num_save_points):
+            loop_start_time = time.perf_counter()
+            Dt = t_values[i] - t_values[i - 1]
+            dt = Dt / substeps
+            dt_half = 0.5 * dt # Halber Zeitschritt
+
+            # --- INNERE SCHLEIFE (Drift-Kick-Drift) ---
+            for _ in range(substeps):
+                
+                # 1. DRIFT (dt/2): p ist konstant
+                # q_half = q_current + p_current * dt_half
+                torch.add(q_current, p_current, alpha=dt_half, out=q_half)
+                
+                # 2. KICK (dt): q ist konstant
+                
+                f_h_half, pot_h_half, _ = harmonic_fp(q_half, omega_matrix)
+                f_p_half, pot_p_half = pair_force_func(q_half, **pair_force_params)
+                
+                # p_current = p_current + (f_h_half + f_p_half) * dt
+                p_current.add_(f_h_half, alpha=dt)
+                p_current.add_(f_p_half, alpha=dt)
+                
+                # 3. DRIFT (dt/2): p ist konstant
+                # q_current = q_half + p_current * dt_half
+                torch.add(q_half, p_current, alpha=dt_half, out=q_current)
+
+            # --- ENDE INNERE SCHLEIFE ---
+
+            # Zustand am Ende in die Output-Arrays schreiben
+            q_out[i], p_out[i] = q_current, p_current
+            
+            # Energien berechnen 
+            kinetic_energy_out[i] = 0.5 * torch.sum(p_current**2)
+            potential_harmonic_out[i] = pot_h_half
+            potential_pair_out[i] = pot_p_half
+
+            loop_end_time = time.perf_counter()
+            eta_seconds = int((loop_end_time - loop_start_time) * (num_save_points - 1 - i))
+            print(f"\rIntegration {100 * (i + 1) / num_save_points:.0f}% "
+                  f"| Time: {eta_seconds // 60} min {eta_seconds % 60} s", end='', flush=True)
+
+        return {
+            "times": t_values, "positions": q_out, "momenta": p_out,
+            "kinetic_energy": kinetic_energy_out,
+            "potential_energy_harmonic": potential_harmonic_out,
+            "potential_energy_pair": potential_pair_out
+        }
