@@ -12,8 +12,7 @@ import torch
 import math
 from typing import Dict, Tuple
 
-# --- Sicherstellen, dass die Konstante global verfügbar ist ---
-# (Dieser Wert muss außerhalb der Funktion definiert sein)
+
 kB = 1.380649e-23  # J/K
 
 def initialize_two_temp_gaussian_state(
