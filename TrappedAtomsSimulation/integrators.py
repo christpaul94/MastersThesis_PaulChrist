@@ -1,3 +1,5 @@
+import torch
+
 def solve_harmonic_analytical(
     t_values: torch.Tensor,
     q0: torch.Tensor,
