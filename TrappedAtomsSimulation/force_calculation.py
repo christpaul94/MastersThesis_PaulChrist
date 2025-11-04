@@ -3,7 +3,7 @@ import torch
 import triton
 import triton.language as tl
 import numpy as np
-
+math
 
 def calculate_interaction_strength(
     r0_factor: float,
