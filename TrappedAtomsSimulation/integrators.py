@@ -1,6 +1,6 @@
 import torch
 from typing import Dict, Tuple, Callable
-
+import time
 
 
 def solve_harmonic_analytical(
