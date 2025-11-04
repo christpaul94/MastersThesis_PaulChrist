@@ -1,3 +1,9 @@
+
+import torch
+import math
+from typing import Dict, Tuple
+
+
 def initialize_momenta_thermal(
     n_particles: int, temperature: float, mass: float, kB: float, precision_type: torch.dtype
 ) -> torch.Tensor:
@@ -8,16 +14,8 @@ def initialize_momenta_thermal(
         momenta -= torch.mean(momenta, dim=0) # Gesamtimpuls auf Null setzen
     return momenta
 
-import torch
-import math
-from typing import Dict, Tuple
 
 
-kB = 1.380649e-23  # J/K
-
-import torch
-import math
-from typing import Dict, Tuple
 
 kB = 1.380649e-23  # J/K
 
