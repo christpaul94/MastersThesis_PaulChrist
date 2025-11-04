@@ -4,6 +4,40 @@ import triton
 import triton.language as tl
 import numpy as np
 
+
+def calculate_interaction_strength(
+    r0_factor: float,
+    a_s_bohr: float = 98.98
+) -> tuple[float, float]:
+    """
+    Berechnet r0_phys und C_phys für das Rb-87 Pseudopotenzial.
+
+    Args:
+        r0_factor: faktor
+        a_s_bohr: s-Wellen-Streulänge in Bohr-Radien.
+                   
+    Returns:
+        Tupel (r0_phys, C_phys)  
+    """
+    
+    HBAR = 1.05457e-34  # J·s
+    A0 = 5.29177e-11   # m (Bohr-Radius)
+    MASS_RB87 = 86.909 * 1.66054e-27 # kg 
+    
+    # Streulänge berechnen
+    a_phys = a_s_bohr * A0
+    
+    # Effektive Reichweite des Potenzials berechnen
+    r0_phys = a_phys * r0_factor
+    
+    # Formel für C_phys  
+    numerator_phys = 2 * HBAR**2 * a_phys
+    denominator_phys = MASS_RB87 * math.sqrt(2 * math.pi) * (r0_phys**3)
+    C_phys = numerator_phys / denominator_phys
+    
+    return r0_phys, C_phys
+
+
 def pair_keops_fp(positions: torch.Tensor, r: float, c: float):
     N = positions.shape[0]
     r0_2 = r**2
@@ -16,7 +50,6 @@ def pair_keops_fp(positions: torch.Tensor, r: float, c: float):
     total_potential = 0.5 * (total_sum - N * c)
     forces = (potential_ij * diff / r0_2).sum_reduction(axis=1)
     return forces, total_potential
-
 
 # --- CUDA Kernel (Triton) ---
 @triton.jit
