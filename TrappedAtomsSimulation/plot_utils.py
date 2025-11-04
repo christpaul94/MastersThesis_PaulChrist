@@ -1,3 +1,5 @@
+import torch
+
 def plot_simple_momentum_histogram(
     p_tensor_dimless: torch.Tensor,
     bins: int = 75,
