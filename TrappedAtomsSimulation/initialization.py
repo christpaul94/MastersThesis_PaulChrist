@@ -22,8 +22,7 @@ from typing import Dict, Tuple
 kB = 1.380649e-23  # J/K
 
 def initialize_one_temp_gaussian_state(
-    n_particles: int,
-    mass_kg: float,
+    n_particles: int
     temp_k: float,
     omega_phys_hz: Tuple[float, float, float],
     t_end_s: float,
@@ -37,6 +36,7 @@ def initialize_one_temp_gaussian_state(
     Bereitet eine Simulation für eine Teilchengruppe im 
     thermischen Gleichgewicht (Maxwell-Boltzmann) vor.
     """
+    mass_kg = 86.909 * 1.66054e-27 # kg 
     temp_ref_k = temp_k
     print(f"--- Skalierung basierend auf T = {temp_ref_k:.2e} K ---")
     omega_phys_rad_s = 2 * math.pi * torch.tensor(omega_phys_hz, dtype=precision, device=device)
@@ -91,8 +91,7 @@ def initialize_one_temp_gaussian_state(
     }
 
 def initialize_two_temp_gaussian_state(
-    n_particles_groups: Tuple[int, int],
-    mass_kg: float,
+    n_particles_groups: Tuple[int, int]
     temp_k_groups: Tuple[float, float],
     omega_phys_hz: Tuple[float, float, float],
     t_end_s: float,
@@ -105,6 +104,7 @@ def initialize_two_temp_gaussian_state(
     """
     Bereitet die Simulation vor 
     """
+    mass_kg = 86.909 * 1.66054e-27 # kg 
     temp_ref_k = temp_k_groups[0]
     print(f"--- Skalierung basierend auf Referenztemperatur T_ref = {temp_ref_k:.2e} K ---")
     omega_phys_rad_s = 2 * math.pi * torch.tensor(omega_phys_hz, dtype=precision, device=device)
