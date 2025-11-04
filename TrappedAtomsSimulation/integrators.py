@@ -1,4 +1,7 @@
 import torch
+from typing import Dict, Tuple, Callable
+
+
 
 def solve_harmonic_analytical(
     t_values: torch.Tensor,
