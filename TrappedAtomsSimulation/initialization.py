@@ -22,7 +22,7 @@ from typing import Dict, Tuple
 kB = 1.380649e-23  # J/K
 
 def initialize_one_temp_gaussian_state(
-    n_particles: int
+    n_particles: int,
     temp_k: float,
     omega_phys_hz: Tuple[float, float, float],
     t_end_s: float,
