@@ -120,7 +120,7 @@ def run_verlet_simulation_HO(
             loop_end_time = time.perf_counter()
             eta_seconds = int((loop_end_time - loop_start_time) * (num_save_points - 1 - i))
             print(f"\rIntegration {100 * (i + 1) / num_save_points:.0f}% "
-                  f"| ETA: {eta_seconds // 60} min {eta_seconds % 60} s", end='', flush=True)
+                  f"| Time: {eta_seconds // 60} min {eta_seconds % 60} s", end='', flush=True)
 
 
             print("\nIntegration abgeschlossen.") # Fügt einen Zeilenumbruch hinzu
