@@ -1,4 +1,5 @@
 import torch
+from typing import Dict, Tuple, Callable
 
 def plot_simple_momentum_histogram(
     p_tensor_dimless: torch.Tensor,
