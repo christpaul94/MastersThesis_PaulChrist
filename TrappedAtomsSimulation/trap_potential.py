@@ -265,7 +265,10 @@ def calculate_crossed_trap_frequencies(
         "omega_x_rad_s": omega_x,
         "omega_y_rad_s": omega_y,
         "omega_z_rad_s": omega_z,
-        "omega_mean_rad_s": omega_mean
+        "omega_mean_rad_s": omega_mean,
+        "freq_x_hz": omega_x / (2 * math.pi),
+        "freq_y_hz": omega_y / (2 * math.pi),
+        "freq_z_hz": omega_z / (2 * math.pi),
+        "freq_mean_hz": omega_mean / (2 * math.pi)
     }
-
 
