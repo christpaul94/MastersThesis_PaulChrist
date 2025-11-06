@@ -6,6 +6,8 @@ import torch
 import math
 from typing import Tuple
 
+### SIMPLE MODEL!!!! extendet model noch zu ergänzen
+
 def calculate_single_beam_X_AXIS(
     positions: torch.Tensor,
     P: float, w0: float, s0: float, 
@@ -118,10 +120,6 @@ import torch
 import math
 from typing import Tuple
 
-# --- Hier müssen die beiden achsenspezifischen Funktionen definiert sein ---
-# def calculate_single_beam_X_AXIS(...): ...
-# def calculate_single_beam_Y_AXIS(...): ...
-# ---
 
 def calculate_crossed_beam_dipole_potential(
     positions: torch.Tensor,
