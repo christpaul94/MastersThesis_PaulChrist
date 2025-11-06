@@ -6,6 +6,11 @@ import torch
 import math
 from typing import Tuple
 
+
+kB = 1.380649e-23  # J/K
+c_light = 299_792_458.0 # m/s
+pi = math.pi
+
 ### SIMPLE MODEL!!!! extendet model noch zu ergänzen
 
 def calculate_single_beam_X_AXIS(
@@ -164,3 +169,103 @@ def calculate_crossed_beam_dipole_potential(
     total_potential_per_particle = pot_particles_x + pot_particles_y
 
     return total_forces, total_potential, total_potential_per_particle
+
+### AB hier wird korrekte extended model verwendet
+
+
+
+def calculate_U0(
+    P: float,          # Laserleistung (W)
+    w0: float,         # Strahl-Taille (m)
+    omega_L: float,    # Laser-Kreisfrequenz (rad/s)
+    omega_0_D1: float, # D1 Atom-Kreisfrequenz (rad/s)
+    Gamma_D1: float,   # D1 Linienbreite (rad/s)
+    omega_0_D2: float, # D2 Atom-Kreisfrequenz (rad/s)
+    Gamma_D2: float    # D2 Linienbreite (rad/s)
+) -> float:
+    """
+    Berechnet die Potentialtiefe U0 (in Joule) für einen einzelnen Strahl
+    nach dem "Extended Model"  
+    """
+ 
+    
+    # Term für die D1-Linie
+    term_D1 = (Gamma_D1 / omega_0_D1**3) * \
+              (1 / (omega_0_D1 - omega_L) + 1 / (omega_0_D1 + omega_L))
+              
+    # Term für die D2-Linie
+    term_D2 = (2 * Gamma_D2 / omega_0_D2**3) * \
+              (1 / (omega_0_D2 - omega_L) + 1 / (omega_0_D2 + omega_L))
+
+    # Präfaktor 
+    prefactor = -(pi * c_light**2) / 2
+    
+    # Intensität im Fokus (I_0 = 2P / (pi * w0^2))
+ 
+    intensity_factor = (2 * P) / (pi * w0**2)
+
+    U0 = prefactor * (term_D1 + term_D2) * intensity_factor
+    
+    return U0
+
+
+def calculate_crossed_trap_frequencies(
+    U0_1: float,         # Potentialtiefe Strahl 1 (in Joule)
+    w0_1: float,         # Strahl-Taille (Waist) Strahl 1 (in Metern)
+    zR_1: float,         # Rayleigh-Länge Strahl 1 (in Metern)
+    U0_2: float,         # Potentialtiefe Strahl 2 (in Joule)
+    w0_2: float,         # Strahl-Taille (Waist) Strahl 2 (in Metern)
+    zR_2: float,         # Rayleigh-Länge Strahl 2 (in Metern)
+    m: float             # Atommasse (in kg)
+) -> dict:
+    """
+    Berechnet   Fallen-Frequenzen  
+    für eine gekreuzte Dipolfalle 
+
+ 
+    """
+    
+    abs_U0_1 = abs(U0_1)
+    abs_U0_2 = abs(U0_2)
+    
+    # --- 1. Frequenzen für Strahl 1 (propagiert entlang x) ---
+    
+    # Radiale Frequenz  
+    omega_perp_1_sq = (4 * abs_U0_1) / (m * w0_1**2)
+    
+    # Axiale Frequenz 
+    omega_axial_1_sq = (2 * abs_U0_1) / (m * zR_1**2)
+
+    # --- 2. Frequenzen für Strahl 2 (propagiert entlang y) ---
+
+    # Radiale Frequenz  
+    omega_perp_2_sq = (4 * abs_U0_2) / (m * w0_2**2)
+    
+    # Axiale Frequenz  
+    omega_axial_2_sq = (2 * abs_U0_2) / (m * zR_2**2)
+    
+     
+    # Frequenz in x-Richtung  
+    omega_x_sq = omega_axial_1_sq + omega_perp_2_sq
+    omega_x = math.sqrt(omega_x_sq)
+    
+    # Frequenz in y-Richtung  
+    omega_y_sq = omega_perp_1_sq + omega_axial_2_sq
+    omega_y = math.sqrt(omega_y_sq)
+    
+    # Frequenz in z-Richtung  
+    omega_z_sq = omega_perp_1_sq + omega_perp_2_sq
+    omega_z = math.sqrt(omega_z_sq)
+    
+    # --- 4. Mittlere Frequenz  --- 
+    omega_mean = (omega_x * omega_y * omega_z)**(1/3.0)
+    
+    # Rückgabe 
+    return {
+        "omega_x_rad_s": omega_x,
+        "omega_y_rad_s": omega_y,
+        "omega_z_rad_s": omega_z,
+        "omega_mean_rad_s": omega_mean
+    }
+
+
