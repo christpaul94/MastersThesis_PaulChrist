@@ -64,7 +64,7 @@ def calculate_single_beam_X_AXIS(
         
         forces_dimless = -grads_U * L0 / E0 # Verwende L0 und E0
         
-        return forces_dimless, total_potential.item(), potential_dimless
+        return forces_dimless, total_potential, potential_dimless
 
 
 import torch
@@ -121,7 +121,7 @@ def calculate_single_beam_Y_AXIS(
         # --- 5. Rückgabe ---
         forces_dimless = -grads_U * L0 / E0 # Verwende L0 und E0
         
-        return forces_dimless, total_potential.item(), potential_dimless
+        return forces_dimless, total_potential, potential_dimless
 
 import torch
 import math
