@@ -13,6 +13,7 @@ pi = math.pi
 
 ### SIMPLE MODEL!!!! extendet model noch zu ergänzen
 
+@torch.compile()
 def calculate_single_beam_X_AXIS(
     positions: torch.Tensor,
     P: float, w0: float, s0: float, 
@@ -70,6 +71,7 @@ import torch
 import math
 from typing import Tuple
 
+@torch.compile()
 def calculate_single_beam_Y_AXIS(
     positions: torch.Tensor,
     P: float, w0: float, s0: float, 
@@ -125,7 +127,7 @@ import torch
 import math
 from typing import Tuple
 
-
+@torch.compile()
 def calculate_crossed_beam_dipole_potential(
     positions: torch.Tensor,
     P_x: float,         # Leistung des Strahls in x-Richtung
