@@ -5,7 +5,10 @@ import torch
 from typing import Dict, Tuple, Callable
 import time
 
-# (Die harmonic_fp Funktion muss in derselben Datei/Scope sein)
+
+
+### Harmonic oscillator Teil 
+
 def harmonic_fp(
     q: torch.Tensor,
     omega_matrix: torch.Tensor
@@ -277,5 +280,88 @@ def run_DKDsplitting_simulation_HO(
             "times": t_values, "positions": q_out, "momenta": p_out,
             "kinetic_energy": kinetic_energy_out,
             "potential_energy_harmonic": potential_harmonic_out,
+            "potential_energy_pair": potential_pair_out
+        }
+
+### Dipole Trap Teil 
+
+
+
+def run_verlet_simulation_general(
+    t_values: torch.Tensor,
+    q0: torch.Tensor,
+    p0: torch.Tensor,
+    trap_force_func: Callable,   # calculate_crossed_beam_dipole_potential
+    trap_force_params: Dict,    # Parameter für die Falle
+    pair_force_func: Callable,    # pair_keops_fp
+    pair_force_params: Dict,    # Parameter für die WW
+    precision_type: torch.dtype = torch.float32,
+    device: torch.device = torch.device('cpu'),
+    substeps: int = 100,
+    silent: bool = False,
+    **kwargs
+) -> Dict[str, torch.Tensor]:
+    """simulation mit Velocity Verlet """
+    with torch.no_grad():
+        num_save_points, n_particles = t_values.size(0), q0.size(0)
+
+        q_out = torch.empty((num_save_points, n_particles, 3), dtype=precision_type, device=device)
+        p_out = torch.empty((num_save_points, n_particles, 3), dtype=precision_type, device=device)
+        kinetic_energy_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+        potential_trap_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+        potential_pair_out = torch.empty(num_save_points, dtype=precision_type, device=device)
+
+        q_current, p_current = q0.to(device, precision_type), p0.to(device, precision_type)
+
+        # --- Initialisierung ---
+        q_out[0], p_out[0] = q_current, p_current
+        kinetic_energy_out[0] = 0.5 * torch.sum(p_current**2)
+        f_trap_current, pot_trap, _ = trap_force_func(q_current, **trap_force_params)
+        f_pair_current, pot_pair = pair_force_func(q_current, **pair_force_params)
+        a_current = f_trap_current + f_pair_current
+        potential_trap_out[0], potential_pair_out[0] = pot_trap, pot_pair
+
+        p_half = torch.empty_like(p_current)
+        q_next = torch.empty_like(q_current)
+        a_next = torch.empty_like(a_current)
+        p_next = torch.empty_like(p_current)
+
+        # --- Hauptschleife ---
+        for i in range(1, num_save_points):
+            loop_start_time = time.perf_counter()
+            Dt = t_values[i] - t_values[i - 1]
+            dt = Dt / substeps
+
+            for _ in range(substeps):
+                p_half = p_current + 0.5 * dt * a_current
+                q_next = q_current + dt * p_half
+
+                f_trap_next, pot_trap_next, _ = trap_force_func(q_next, **trap_force_params)
+                f_pair_next, pot_pair_next = pair_force_func(q_next, **pair_force_params)
+                a_next = f_trap_next + f_pair_next
+                p_next = p_half + 0.5 * dt * a_next
+
+                q_current, q_next = q_next, q_current
+                p_current, p_next = p_next, p_current
+                a_current, a_next = a_next, a_current
+
+            q_out[i], p_out[i] = q_current, p_current
+            kinetic_energy_out[i] = 0.5 * torch.sum(p_current**2)
+            potential_trap_out[i] = pot_trap_next
+            potential_pair_out[i] = pot_pair_next
+
+            if not silent:
+                loop_end_time = time.perf_counter()
+                eta_seconds = int((loop_end_time - loop_start_time) * (num_save_points - 1 - i))
+                print(f"\rIntegration {100 * (i + 1) / num_save_points:.0f}% "
+                      f"| ETA: {eta_seconds // 60} min {eta_seconds % 60} s", end='', flush=True)
+        
+        if not silent:
+            print("\nIntegration abgeschlossen.")
+
+        return {
+            "times": t_values, "positions": q_out, "momenta": p_out,
+            "kinetic_energy": kinetic_energy_out,
+            "potential_energy_trap": potential_trap_out,
             "potential_energy_pair": potential_pair_out
         }
