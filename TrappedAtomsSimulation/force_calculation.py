@@ -77,9 +77,9 @@ def softcore_forces_torch_compile(
 
 # ========================================================================
 
-def pair_keops_fp(positions: torch.Tensor, r0: float, c: float):
+def pair_keops_fp(positions: torch.Tensor, r: float, c: float):
     N = positions.shape[0]
-    r0_2 = r0**2
+    r0_2 = r**2
     x_i = LazyTensor(positions[:, None, :])
     x_j = LazyTensor(positions[None, :, :])
 
