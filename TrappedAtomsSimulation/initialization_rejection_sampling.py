@@ -58,8 +58,6 @@ def generate_positions_rejection_sampling(
             accepted_positions.append(new_positions)
             n_accepted += new_positions.shape[0]
 
-
-
     print(f"  -> Sampling beendet. Akzeptanzrate: {n_particles_target / n_total_tried * 100:.2f}%")
     return torch.cat(accepted_positions, dim=0)
 
