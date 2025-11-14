@@ -20,6 +20,25 @@ def harmonic_fp(
     return forces, total_potential, potential_per_particle
 
 
+def no_force_fp(q: torch.Tensor, **kwargs) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Fallenfunktion, die keine Kraft und kein Potential zurückgibt.
+    """
+    forces = torch.zeros_like(q)
+    total_potential = torch.tensor(0.0, device=q.device, dtype=q.dtype)
+    potential_per_particle = torch.zeros(q.shape[0], device=q.device, dtype=q.dtype)
+    return forces, total_potential, potential_per_particle
+
+def no_pair_force_fp(q: torch.Tensor, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Funktion für die Paar-Wechselwirkung (pair_force_func), 
+    die keine Kraft und kein Potential zurückgibt.
+    """
+    forces = torch.zeros_like(q)
+    total_potential = torch.tensor(0.0, device=q.device, dtype=q.dtype)
+    return forces, total_potential
+
+
 def solve_harmonic_analytical(
     t_values: torch.Tensor,
     q0: torch.Tensor,
